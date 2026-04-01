@@ -1,354 +1,292 @@
-# Dashboard de Queimadas no Brasil
+# World Survive — Documentação técnica
 
-## Documentação Técnica do Projeto
-
----
-
-### 📋 Informações do Projeto
-
-**Instituição:** Universidade Paulista (UNIP)  
-**Curso:** Ciência da Computação  
-**Semestre:** 4º Semestre  
-**Desenvolvedor:** Denis Pimentel Raineri  
-**Ano:** 2025
+Painel web de visualização de focos de calor no Brasil (trabalho acadêmico).
 
 ---
 
-## 📖 Resumo Executivo
+## Informações do projeto
 
-Este projeto consiste em um dashboard interativo para monitoramento e análise de dados de queimadas no Brasil, desenvolvido como trabalho acadêmico. A aplicação oferece visualizações dinâmicas e interativas dos dados de queimadas organizados por biomas, regiões e estados brasileiros, cobrindo o período de 2019 a 2025.
+| Campo            | Valor                                      |
+| ---------------- | ------------------------------------------ |
+| **Instituição**  | Universidade Paulista (UNIP)               |
+| **Curso**        | Ciência da Computação                      |
+| **Semestre**     | 4º semestre                                |
+| **Discente**     | Denis Pimentel Raineri                     |
+| **Repositório**  | `world-survive`                            |
 
-## 🎯 Objetivos
+---
 
-### Objetivo Geral
+## Resumo executivo
 
-Desenvolver uma aplicação web responsiva para visualização e análise de dados de queimadas no Brasil, utilizando tecnologias modernas de desenvolvimento front-end.
+O **World Survive** é um painel interativo que consolida, em uma única página, filtros por **ano** e **macroregião**, cartões-resumo, quatro visualizações com **Chart.js** e um **mapa** baseado em GeoJSON (`react-simple-maps`). A série temporal cobre **2019 a 2025**; os valores são mantidos em **TypeScript** como dataset estático, separados da camada de apresentação.
 
-### Objetivos Específicos
+---
 
-- Implementar interface intuitiva para navegação e filtragem de dados
-- Criar múltiplas visualizações gráficas (barras, pizza, linha, disco)
-- Desenvolver mapa interativo do Brasil
-- Garantir responsividade para diferentes dispositivos
-- Aplicar boas práticas de desenvolvimento com TypeScript
+## Objetivos
 
-## 🛠️ Tecnologias Utilizadas
+### Objetivo geral
 
-### Core Technologies
+Proporcionar uma interface responsiva para explorar, de forma didática, a distribuição de focos por UF, macroregião e bioma no Brasil.
 
-- **React 18.3.1** - Biblioteca JavaScript para construção de interfaces
-- **TypeScript 5.5.3** - Superset do JavaScript com tipagem estática
-- **Vite 5.4.2** - Build tool e bundler moderno
+### Objetivos específicos
 
-### Styling & UI
+- Centralizar critérios de visualização (ano + macroregião) e propagá-los aos componentes
+- Expor agregações (totais, variação anual, participação regional) de forma explícita no código (`estatisticasAgregadas`)
+- Registrar dependências do **Chart.js** uma única vez (`lib/chartRegistrar.ts`)
+- Carregar geometria do mapa via **fetch**, com tentativa sequencial de fontes e fallback visual
+- Manter tipagem consistente (`CriteriosPainel`, `AnoPainel`, séries por ano)
 
-- **Tailwind CSS 3.4.1** - Framework CSS utilitário
-- **Lucide React 0.344.0** - Biblioteca de ícones
+---
 
-### Data Visualization
+## Transparência acadêmica e origem dos dados
 
-- **Chart.js 4.4.2** - Biblioteca para criação de gráficos
-- **React Chart.js 2 5.2.0** - Wrapper React para Chart.js
-- **React Simple Maps 3.0.0** - Componentes para mapas SVG
+1. **Dataset numérico**  
+   O arquivo `src/data/dadosQueimadas.ts` contém um **conjunto estático** usado para o trabalho. Ele **não** é uma réplica automatizada nem uma exportação oficial em tempo real do INPE ou de outro órgão.
 
-### Development Tools
+2. **Referência para dados oficiais**  
+   Para comparações com a realidade e citações bibliográficas, utilize fontes oficiais, por exemplo o **Programa Queimadas / INPE**, **MMA** e publicações do **IBGE**, conforme orientação do professor.
 
-- **ESLint** - Linter para JavaScript/TypeScript
-- **PostCSS** - Processador CSS
-- **Autoprefixer** - Plugin para prefixos CSS automáticos
+3. **Ferramentas e autoria**  
+   Se no desenvolvimento foram utilizados **templates**, **ambientes de prototipagem** (por exemplo Bolt) ou **assistentes de IA**, o regulamento da disciplina costuma exigir **declaração explícita** no relatório ou na defesa. Esta documentação descreve a arquitetura **atual** do repositório; a responsabilidade pela honestidade acadêmica é do discente e das regras da UNIP.
 
-## 🏗️ Arquitetura do Projeto
+---
 
-### Estrutura de Diretórios
+## Tecnologias
+
+| Área            | Tecnologias principais                          |
+| --------------- | ----------------------------------------------- |
+| Runtime / UI    | React 18, TypeScript                            |
+| Build           | Vite                                            |
+| Estilo          | Tailwind CSS, variáveis CSS em `index.css`      |
+| Gráficos        | Chart.js, react-chartjs-2                       |
+| Mapa            | react-simple-maps                               |
+| Ícones          | Lucide React                                    |
+| Qualidade       | ESLint, typescript-eslint                       |
+
+Versões exatas: ver `package.json`.
+
+---
+
+## Arquitetura e estrutura de diretórios
+
+### Visão geral
+
+- **Component-based**: cada gráfico e o mapa são componentes isolados.
+- **Estado local**: critérios globais do painel vêm de `useFiltrosDashboard` e descem por props (sem Redux neste escopo).
+- **Separação de responsabilidades**: dados brutos em `data/`, transformações em `utils/`, tipos em `types/`, constantes de domínio em `constants/`.
+
+### Árvore relevante
 
 ```
 src/
-├── components/           # Componentes React
-│   ├── charts/          # Gráficos especializados
+├── components/
+│   ├── charts/
 │   │   ├── GraficoBarraEstados.tsx
 │   │   ├── GraficoDiscoBiomas.tsx
 │   │   ├── GraficoLinhaComparativo.tsx
 │   │   └── GraficoPizzaRegioes.tsx
-│   ├── map/             # Componentes de mapa
+│   ├── map/
 │   │   ├── MapaBrasil.tsx
-│   │   └── MapaBrasilAlternativo.tsx
-│   ├── CardTotais.tsx   # Cards informativos
-│   ├── Dashboard.tsx    # Componente principal
-│   ├── Filtros.tsx      # Sistema de filtros
-│   └── Header.tsx       # Cabeçalho da aplicação
-├── data/                # Dados estáticos
-│   └── dadosQueimadas.ts
-├── types/               # Definições TypeScript
+│   │   └── MapaBrasilAlternativo.tsx   # variante simplificada (não usada no Dashboard padrão)
+│   ├── CardTotais.tsx
+│   ├── Dashboard.tsx
+│   ├── Filtros.tsx
+│   └── Header.tsx
+├── constants/
+│   └── cronologia.ts          # ANOS_CRONOLOGICOS, tipo AnoPainel
+├── data/
+│   └── dadosQueimadas.ts      # séries por bioma, macroregião e UF
+├── hooks/
+│   └── useFiltrosDashboard.ts
+├── lib/
+│   └── chartRegistrar.ts      # Chart.register centralizado
+├── types/
 │   └── types.ts
-├── utils/               # Funções utilitárias
-│   └── dataUtils.ts
-├── App.tsx              # Componente raiz
-├── main.tsx             # Ponto de entrada
-└── index.css            # Estilos globais
+├── utils/
+│   ├── dataUtils.ts           # preparação de séries para gráficos e mapa
+│   ├── estatisticasAgregadas.ts
+│   └── mapeamentoBrasil.ts    # UF ↔ macroregião, inferência de sigla no GeoJSON
+├── App.tsx
+├── main.tsx                   # importa chartRegistrar antes da árvore React
+├── index.css
+└── vite-env.d.ts
 ```
 
-### Padrões Arquiteturais
+---
 
-- **Component-Based Architecture** - Divisão em componentes reutilizáveis
-- **Props Drilling** - Passagem de dados entre componentes
-- **State Management** - Gerenciamento de estado local com React Hooks
-- **Separation of Concerns** - Separação clara entre dados, lógica e apresentação
+## Fluxo de dados e filtros
 
-## 📊 Funcionalidades Implementadas
+1. `Dashboard` chama `useFiltrosDashboard()` e obtém `criterios` (`ano`, `regiao`) e `setCriterios`.
+2. `Filtros` altera `criterios` e oferece `onRedefinir` para voltar ao estado inicial.
+3. Componentes filhos recebem `ano` e/ou `regiao` e consultam `dataUtils` ou `estatisticasAgregadas` conforme necessário.
 
-### 1. Sistema de Filtros
+---
 
-- **Filtro por Ano**: Seleção entre 2019-2025
-- **Filtro por Região**: Norte, Nordeste, Centro-Oeste, Sudeste, Sul
-- **Filtros Combinados**: Aplicação simultânea de múltiplos filtros
+## Funcionalidades por módulo
 
-### 2. Visualizações Gráficas
+### Filtros (`Filtros.tsx`)
 
-#### Gráfico de Barras - Estados
+- Ano: um dos valores de `ANOS_CRONOLOGICOS`.
+- Macroregião: valor do dataset ou “Brasil (todas)”.
+- Botão **Redefinir** restaura ano padrão e macroregião nula.
 
-- Exibe dados de queimadas por estado
-- Filtragem por região
-- Cores diferenciadas por região
-- Tooltips informativos
+### Cartões (`CardTotais.tsx`)
 
-#### Gráfico de Pizza - Regiões
+- Total nacional no ano (soma das macroregiões do dataset).
+- Variação percentual em relação ao ano anterior, quando aplicável.
+- Com macroregião selecionada: total da macro e percentual sobre o nacional.
 
-- Distribuição percentual por região
-- Cores padronizadas por região
-- Legendas interativas
+### Gráficos
 
-#### Gráfico de Disco - Biomas
+- **Barras**: UF; respeita filtro de macroregião.
+- **Pizza**: partilha entre macroregiões no ano.
+- **Rosca**: partilha entre biomas no ano.
+- **Linhas**: série 2019–2025; com macroregião filtrada, uma série por UF da macro; sem filtro, uma série por macroregião.
 
-- Visualização de dados por bioma brasileiro
-- Design em formato de disco (doughnut)
-- Cores específicas para cada bioma
+### Mapa (`MapaBrasil.tsx`)
 
-#### Gráfico de Linha - Comparativo Temporal
+- Tenta carregar GeoJSON de URL pública; em seguida `/brasil-estados.json` se existir no `public/`.
+- Cores por macroregião com opacidade proporcional ao volume regional no ano.
+- Se todas as fontes falharem, exibe **grade por macroregião** com os mesmos totais do painel.
 
-- Evolução temporal das queimadas
-- Comparação entre anos
-- Filtros por região
+### Paleta no mapa (referência)
 
-### 3. Mapa Interativo
+- **Norte**: azul  
+- **Nordeste**: laranja  
+- **Centro-Oeste**: verde  
+- **Sudeste**: vermelho  
+- **Sul**: roxo  
 
-- Representação geográfica do Brasil
-- Visualização por estados
-- Integração com filtros
-- Tooltips com informações detalhadas
+(Alinhado à legenda interna do componente de mapa.)
 
-### 4. Cards Informativos
+---
 
-- Totais consolidados
-- Métricas por bioma, região e estado
-- Atualização dinâmica baseada nos filtros
-
-## 🎨 Design e UX
-
-### Princípios de Design
-
-- **Responsividade**: Layout adaptável para desktop, tablet e mobile
-- **Consistência Visual**: Paleta de cores padronizada
-- **Usabilidade**: Interface intuitiva e acessível
-- **Performance**: Carregamento otimizado de componentes
-
-### Paleta de Cores por Região
-
-- **Norte**: Tons de verde
-- **Nordeste**: Tons de laranja
-- **Centro-Oeste**: Tons de amarelo
-- **Sudeste**: Tons de azul
-- **Sul**: Tons de roxo
-
-### Sistema de Grid
-
-- Layout responsivo com CSS Grid e Flexbox
-- Breakpoints para diferentes tamanhos de tela
-- Componentes que se adaptam automaticamente
-
-## 📈 Estrutura de Dados
-
-### Interfaces TypeScript
+## Modelo de dados (TypeScript)
 
 ```typescript
-interface DadosBioma {
+// constants/cronologia.ts
+export const ANOS_CRONOLOGICOS = [
+  '2019', '2020', '2021', '2022', '2023', '2024', '2025',
+] as const;
+export type AnoPainel = (typeof ANOS_CRONOLOGICOS)[number];
+```
+
+```typescript
+// types/types.ts (trecho)
+export interface SeriePorAno {
+  anos: Record<AnoPainel, number>;
+}
+
+export interface DadosBioma extends SeriePorAno {
   bioma: string;
-  anos: Record<string, number>;
 }
 
-interface DadosRegiao {
+export interface DadosRegiao extends SeriePorAno {
   regiao: string;
-  anos: Record<string, number>;
 }
 
-interface DadosEstado {
+export interface DadosEstado extends SeriePorAno {
   estado: string;
   sigla: string;
   regiao: string;
-  anos: Record<string, number>;
 }
 
-interface FiltrosType {
-  ano: AnoDisponivel;
+export interface CriteriosPainel {
+  ano: AnoPainel;
   regiao: string | null;
 }
+
+/** Alias legado para compatibilidade com nomenclatura anterior */
+export type AnoDisponivel = AnoPainel;
 ```
 
-### Organização dos Dados
+### Domínio coberto pelo dataset
 
-- **Biomas**: Amazônia, Caatinga, Cerrado, Mata Atlântica, Pampa, Pantanal
-- **Regiões**: Norte, Nordeste, Centro-Oeste, Sudeste, Sul
-- **Estados**: Todos os 26 estados brasileiros + Distrito Federal
-- **Período**: 2019 a 2025
+- **Biomas**: Amazônia, Caatinga, Cerrado, Mata Atlântica, Pampa, Pantanal  
+- **Macroregiões**: Centro-Oeste, Nordeste, Norte, Sudeste, Sul  
+- **UFs**: 26 estados + DF  
 
-## 🚀 Instalação e Execução
+---
+
+## Instalação e execução
 
 ### Pré-requisitos
 
-- Node.js (versão 16 ou superior)
-- npm ou yarn
+- Node.js 18 ou superior (recomendado LTS atual)
 
-### Passos para Instalação
+### Comandos
 
 ```bash
-# 1. Clone o repositório
 git clone <url-do-repositorio>
-
-# 2. Navegue até o diretório
-cd project
-
-# 3. Instale as dependências
+cd world-survive
 npm install
-
-# 4. Execute em modo de desenvolvimento
 npm run dev
-
-# 5. Acesse no navegador
-http://localhost:5173
 ```
 
-### Scripts Disponíveis
+- Desenvolvimento: `http://localhost:5173`  
+- Produção: `npm run build` e `npm run preview`
 
-- `npm run dev` - Execução em modo desenvolvimento
-- `npm run build` - Build para produção
-- `npm run preview` - Preview do build de produção
-- `npm run lint` - Verificação de código com ESLint
+### Scripts npm
 
-## 🧪 Metodologia de Desenvolvimento
-
-### Processo de Desenvolvimento
-
-1. **Análise de Requisitos** - Definição das funcionalidades necessárias
-2. **Design da Arquitetura** - Estruturação dos componentes e dados
-3. **Implementação Incremental** - Desenvolvimento por funcionalidades
-4. **Testes Manuais** - Verificação de funcionalidades e responsividade
-5. **Otimização** - Melhorias de performance e UX
-
-### Boas Práticas Aplicadas
-
-- **Tipagem Forte** com TypeScript
-- **Componentização** para reutilização
-- **Responsividade** mobile-first
-- **Código Limpo** e bem documentado
-- **Versionamento** com Git
-
-## 📱 Responsividade
-
-### Breakpoints Implementados
-
-- **Mobile**: < 768px
-- **Tablet**: 768px - 1024px
-- **Desktop**: > 1024px
-
-### Adaptações por Dispositivo
-
-- **Mobile**: Layout em coluna única, gráficos empilhados
-- **Tablet**: Layout híbrido, 2 colunas quando possível
-- **Desktop**: Layout completo em grid, múltiplas colunas
-
-## 🔍 Análise de Resultados
-
-### Funcionalidades Alcançadas
-
-✅ Dashboard interativo completo  
-✅ Múltiplas visualizações gráficas  
-✅ Sistema de filtros funcionais  
-✅ Mapa interativo do Brasil  
-✅ Interface responsiva  
-✅ Tipagem TypeScript completa  
-✅ Performance otimizada
-
-### Métricas de Qualidade
-
-- **Componentes**: 12 componentes principais
-- **Linhas de Código**: ~1500 linhas
-- **Cobertura TypeScript**: 100%
-- **Responsividade**: 3 breakpoints
-- **Performance**: Carregamento < 2s
-
-## 🎓 Aprendizados e Competências Desenvolvidas
-
-### Competências Técnicas
-
-- Desenvolvimento com React e TypeScript
-- Implementação de visualizações de dados
-- Design responsivo com Tailwind CSS
-- Arquitetura de componentes
-- Integração de bibliotecas externas
-
-### Competências Transversais
-
-- Análise e estruturação de dados
-- Design de interface de usuário
-- Resolução de problemas técnicos
-- Documentação técnica
-- Gestão de projeto individual
-
-## 🔮 Possíveis Melhorias Futuras
-
-### Funcionalidades Adicionais
-
-- [ ] Integração com APIs de dados reais
-- [ ] Sistema de exportação de relatórios
-- [ ] Filtros avançados por período customizado
-- [ ] Comparações entre múltiplos anos
-- [ ] Alertas e notificações
-- [ ] Dashboard administrativo
-
-### Melhorias Técnicas
-
-- [ ] Implementação de testes automatizados
-- [ ] Cache de dados para melhor performance
-- [ ] PWA (Progressive Web App)
-- [ ] Internacionalização (i18n)
-- [ ] Acessibilidade (WCAG)
-- [ ] Otimização SEO
-
-## 📚 Referências e Fontes
-
-### Documentações Técnicas
-
-- [React Documentation](https://react.dev/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Chart.js Documentation](https://www.chartjs.org/docs/)
-- [Vite Documentation](https://vitejs.dev/guide/)
-
-### Dados e Informações
-
-- Instituto Nacional de Pesquisas Espaciais (INPE)
-- Ministério do Meio Ambiente (MMA)
-- Instituto Brasileiro de Geografia e Estatística (IBGE)
+| Script            | Função                          |
+| ----------------- | ------------------------------- |
+| `npm run dev`     | Servidor Vite em desenvolvimento |
+| `npm run build`   | Compilação para `dist/`         |
+| `npm run preview` | Servir o build gerado           |
+| `npm run lint`    | ESLint no projeto               |
 
 ---
 
-## 📝 Considerações Finais
+## Metodologia e boas práticas
 
-Este projeto representa a aplicação prática de conhecimentos adquiridos durante o curso, demonstrando competências em desenvolvimento front-end moderno, visualização de dados e design de interfaces. A implementação bem-sucedida de todas as funcionalidades planejadas evidencia o domínio das tecnologias utilizadas e a capacidade de desenvolver soluções completas e funcionais.
+- Tipagem estática em interfaces de dados e props.
+- Evitar `Chart.register` duplicado nos componentes de gráfico.
+- Evitar efeitos colaterais no render (ex.: carregamento do mapa tratado com `fetch` + `useEffect`).
+- Estilos reutilizáveis: classe `.painel-card` e variáveis `--cor-*` em `index.css`.
 
-O dashboard desenvolvido não apenas atende aos requisitos técnicos estabelecidos, mas também oferece uma experiência de usuário rica e intuitiva, contribuindo para a conscientização sobre a questão ambiental das queimadas no Brasil através da visualização clara e acessível dos dados.
+Testes automatizados não estão no escopo atual; validação por inspeção manual e `lint`/`build`.
 
 ---
 
-**Desenvolvido por:** Denis Pimentel Raineri  
-**Instituição:** Universidade Paulista (UNIP)  
-**Data:** 2025
+## Responsividade
+
+- Grid com `grid-cols-1` e breakpoints `md:` / `lg:` do Tailwind.
+- Gráficos com altura fixa em container (`h-80`) e `maintainAspectRatio: false` no Chart.js.
+
+---
+
+## Melhorias futuras sugeridas
+
+- Integração com API oficial ou exportação CSV atualizável.
+- Testes (Vitest + Testing Library).
+- Melhorias de acessibilidade (ARIA nos gráficos, contraste, foco).
+- Internacionalização (pt/en).
+
+---
+
+## Referências
+
+### Documentação de ferramentas
+
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/docs/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Chart.js](https://www.chartjs.org/docs/)
+- [react-simple-maps](https://www.react-simple-maps.io/)
+
+### Contexto ambiental e dados oficiais (consulta e citação)
+
+- INPE — Programa Queimadas  
+- Ministério do Meio Ambiente (MMA)  
+- IBGE — malhas e divisões territoriais  
+
+---
+
+## Considerações finais
+
+Este documento descreve a implementação atual do **World Survive** como painel de visualização educacional. A separação entre **dados estáticos do repositório** e **fontes oficiais** deve ficar clara tanto na documentação quanto na apresentação ao professor, em linha com as exigências de integridade acadêmica da instituição.
+
+---
+
+**Denis Pimentel Raineri** — UNIP — Ciência da Computação — 4º semestre.

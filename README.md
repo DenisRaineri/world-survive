@@ -1,76 +1,59 @@
-# Dashboard de Queimadas no Brasil
+# World Survive — Painel de focos de calor
 
-Dashboard interativo para monitoramento de queimadas no Brasil, desenvolvido com React, TypeScript e Tailwind CSS.
+Aplicação web (painel) para visualização de **focos de calor / queimadas** no Brasil por ano, macroregião, UF e bioma, desenvolvida como trabalho acadêmico na UNIP. Stack: **React 18**, **TypeScript**, **Vite**, **Tailwind CSS**, **Chart.js** e **react-simple-maps**.
 
-## 🔥 Funcionalidades
+## Funcionalidades
 
-- **Visualização por ano**: Dados de 2019 a 2025
-- **Filtros por região**: Norte, Nordeste, Centro-Oeste, Sudeste, Sul
-- **Múltiplos gráficos**: Barras, pizza, linha e disco
-- **Mapa interativo**: Visualização geográfica das queimadas
-- **Cards informativos**: Totais por bioma, região e estado
+- **Critérios de visão**: ano (2019–2025) e macroregião opcional (ou Brasil inteiro), com botão **Redefinir**
+- **Cards**: total nacional, variação em relação ao ano anterior (quando existir) e destaque regional com participação no total
+- **Gráficos**: barras por UF, pizza por macroregião, rosca por bioma, linhas comparativas na série temporal
+- **Mapa**: geometria dos estados (GeoJSON remoto ou fallback local) com intensidade por macroregião; fallback em grade se o mapa não carregar
 
-## 🛠️ Tecnologias
+## Requisitos
 
-- React 18
-- TypeScript
-- Tailwind CSS
-- Chart.js
-- React Simple Maps
-- Vite
+- Node.js 18+ (recomendado 20+)
+- npm
 
-## 🚀 Instalação
+## Instalação e scripts
 
 ```bash
-# Clone o repositório
 git clone <url-do-repositorio>
-
-# Entre no diretório
-cd project
-
-# Instale as dependências
+cd world-survive
 npm install
-
-# Execute o projeto
 npm run dev
 ```
 
-## 📊 Estrutura dos Dados
+Abra `http://localhost:5173` no navegador.
 
-O dashboard apresenta dados organizados por:
+| Comando           | Descrição                    |
+| ----------------- | ---------------------------- |
+| `npm run dev`     | Servidor de desenvolvimento  |
+| `npm run build`   | Build de produção (`dist/`)  |
+| `npm run preview` | Pré-visualização do build      |
+| `npm run lint`    | ESLint                       |
 
-- **Biomas**: Amazônia, Caatinga, Cerrado, Mata Atlântica, Pampa, Pantanal
-- **Regiões**: Norte, Nordeste, Centro-Oeste, Sudeste, Sul
-- **Estados**: Todos os 26 estados + DF
-- **Anos**: 2019-2025
-
-## 🗂️ Estrutura do Projeto
+## Estrutura do código (resumo)
 
 ```
 src/
-├── components/
-│   ├── charts/          # Gráficos
-│   ├── map/            # Mapa do Brasil
-│   ├── Dashboard.tsx   # Componente principal
-│   ├── Filtros.tsx     # Filtros de ano/região
-│   └── Header.tsx      # Cabeçalho
-├── data/
-│   └── dadosQueimadas.ts # Dados das queimadas
-├── types/
-│   └── types.ts        # Tipos TypeScript
-└── utils/
-    └── dataUtils.ts    # Funções utilitárias
+├── components/       # UI: Dashboard, Filtros, Header, CardTotais, charts/, map/
+├── constants/        # cronologia (anos da série)
+├── data/             # dados estáticos (dadosQueimadas.ts)
+├── hooks/            # useFiltrosDashboard
+├── lib/              # chartRegistrar (Chart.js registrado uma vez)
+├── types/            # tipos TypeScript
+├── utils/            # dataUtils, mapeamentoBrasil, estatisticasAgregadas
+├── App.tsx
+├── main.tsx
+└── index.css         # variáveis de tema (--cor-*)
 ```
 
-## 📱 Responsividade
+## Dados e uso acadêmico
 
-O dashboard é totalmente responsivo, adaptando-se a diferentes tamanhos de tela com layout em grid flexível.
+Os números exibidos vêm de um **arquivo estático** (`src/data/dadosQueimadas.ts`), adequado para demonstração e estudo. **Não substituem** bases oficiais em tempo real. Para dados institucionais, use fontes como o **INPE / Programa Queimadas** e normas da sua disciplina sobre citação e originalidade.
 
-## 🎨 Design
+Documentação técnica detalhada: [`DOCUMENTACAO.md`](./DOCUMENTACAO.md).
 
-Interface moderna com:
-- Cores diferenciadas por região
-- Animações suaves
-- Estados de carregamento
-- Tratamento de erros
-- Tooltips informativos
+## Autoria
+
+**Denis Pimentel Raineri** — UNIP, Ciência da Computação (4º semestre).
