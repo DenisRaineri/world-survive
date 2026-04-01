@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useFiltrosDashboard } from '../hooks/useFiltrosDashboard';
 import Filtros from './Filtros';
 import CardTotais from './CardTotais';
 import GraficoBarraEstados from './charts/GraficoBarraEstados';
@@ -6,50 +7,32 @@ import GraficoPizzaRegioes from './charts/GraficoPizzaRegioes';
 import GraficoDiscoBiomas from './charts/GraficoDiscoBiomas';
 import GraficoLinhaComparativo from './charts/GraficoLinhaComparativo';
 import MapaBrasil from './map/MapaBrasil';
-import { FiltrosType } from '../types/types';
 
 const Dashboard: React.FC = () => {
-  const [filtros, setFiltros] = useState<FiltrosType>({
-    ano: '2024',
-    regiao: null
-  });
+  const { criterios, setCriterios, redefinirFiltros } = useFiltrosDashboard();
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <Filtros
-        filtros={filtros}
-        setFiltros={setFiltros}
+        criterios={criterios}
+        onCriteriosChange={setCriterios}
+        onRedefinir={redefinirFiltros}
       />
-      
-      <CardTotais
-        ano={filtros.ano}
-        regiao={filtros.regiao}
-      />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <GraficoBarraEstados
-          ano={filtros.ano}
-          regiao={filtros.regiao}
-        />
-        <GraficoPizzaRegioes
-          ano={filtros.ano}
-        />
+
+      <CardTotais ano={criterios.ano} regiao={criterios.regiao} />
+
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <GraficoBarraEstados ano={criterios.ano} regiao={criterios.regiao} />
+        <GraficoPizzaRegioes ano={criterios.ano} />
       </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <GraficoDiscoBiomas
-          ano={filtros.ano}
-        />
-        <GraficoLinhaComparativo
-          regiao={filtros.regiao}
-        />
+
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <GraficoDiscoBiomas ano={criterios.ano} />
+        <GraficoLinhaComparativo regiao={criterios.regiao} />
       </div>
-      
-      <div className="mb-6">
-        <MapaBrasil
-          ano={filtros.ano}
-          regiao={filtros.regiao}
-        />
+
+      <div className="mb-4">
+        <MapaBrasil ano={criterios.ano} regiao={criterios.regiao} />
       </div>
     </div>
   );

@@ -1,208 +1,223 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  ComposableMap, 
-  Geographies, 
-  Geography, 
-  ZoomableGroup 
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  ZoomableGroup,
 } from 'react-simple-maps';
-import { AnoDisponivel } from '../../types/types';
+import type { AnoPainel } from '../../constants/cronologia';
 import { obterTotalPorRegiaoPorAno } from '../../utils/dataUtils';
+import {
+  inferirSiglaUf,
+  macroregiaoDaUf,
+} from '../../utils/mapeamentoBrasil';
 
-// URLs alternativas para o GeoJSON do Brasil
-const geoUrls = [
-  "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson",
-  "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson",
-  "/brasil-estados.json" // Arquivo local como último recurso
-];
+const FONTES_GEOJSON = [
+  'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson',
+  '/brasil-estados.json',
+] as const;
 
 interface MapaBrasilProps {
-  ano: AnoDisponivel;
+  ano: AnoPainel;
   regiao: string | null;
 }
 
+/** GeoJSON mínimo aceito por react-simple-maps */
+type ObjetoGeografia = {
+  type: string;
+  features?: unknown[];
+};
+
 const MapaBrasil: React.FC<MapaBrasilProps> = ({ ano, regiao }) => {
-  const [geoUrl, setGeoUrl] = useState(geoUrls[0]);
+  const [indiceFonte, setIndiceFonte] = useState(0);
+  const [geoJson, setGeoJson] = useState<ObjetoGeografia | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-  const [urlIndex, setUrlIndex] = useState(0);
-  const dadosRegiao = obterTotalPorRegiaoPorAno(ano);
-  
-  const estadosPorRegiao: Record<string, string[]> = {
-    'NORTE': ['AC', 'AM', 'AP', 'PA', 'RO', 'RR', 'TO'],
-    'NORDESTE': ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'],
-    'CENTRO-OESTE': ['DF', 'GO', 'MS', 'MT'],
-    'SUDESTE': ['ES', 'MG', 'RJ', 'SP'],
-    'SUL': ['PR', 'RS', 'SC']
-  };
+  const [erroCompleto, setErroCompleto] = useState(false);
 
-  const obterCor = (regiaoEstado: string, intensidade: number): string => {
-    const valorMaximo = Math.max(...Object.values(dadosRegiao));
-    const normalizado = valorMaximo > 0 ? intensidade / valorMaximo : 0;
-    
-    const cores = {
-      'NORTE': `rgba(33, 150, 243, ${0.2 + normalizado * 0.8})`,
-      'NORDESTE': `rgba(255, 152, 0, ${0.2 + normalizado * 0.8})`,
-      'CENTRO-OESTE': `rgba(76, 175, 80, ${0.2 + normalizado * 0.8})`,
-      'SUDESTE': `rgba(244, 67, 54, ${0.2 + normalizado * 0.8})`,
-      'SUL': `rgba(156, 39, 176, ${0.2 + normalizado * 0.8})`
-    };
-    
-    return cores[regiaoEstado as keyof typeof cores] || '#f0f0f0';
-  };
+  const totaisPorMacro = useMemo(
+    () => obterTotalPorRegiaoPorAno(ano),
+    [ano]
+  );
 
-  const obterEstadoPorNome = (nome: string): string => {
-    if (!nome) return '';
-    
-    const mapeamento: Record<string, string> = {
-      'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM',
-      'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES',
-      'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS',
-      'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR',
-      'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN',
-      'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC',
-      'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
-    };
-    
-    return mapeamento[nome] || nome.toUpperCase().substring(0, 2);
-  };
+  const valorMaxRegiao = useMemo(
+    () => Math.max(...Object.values(totaisPorMacro), 1),
+    [totaisPorMacro]
+  );
 
-  const tentarProximaUrl = () => {
-    if (urlIndex < geoUrls.length - 1) {
-      const novoIndex = urlIndex + 1;
-      setUrlIndex(novoIndex);
-      setGeoUrl(geoUrls[novoIndex]);
-      setCarregando(true);
-      setErro(null);
-    } else {
-      setErro('Não foi possível carregar nenhuma fonte de dados do mapa');
+  const carregarFonte = useCallback(async (indice: number) => {
+    if (indice >= FONTES_GEOJSON.length) {
+      setErroCompleto(true);
+      setCarregando(false);
+      setGeoJson(null);
+      return;
+    }
+    setCarregando(true);
+    setErroCompleto(false);
+    try {
+      const res = await fetch(FONTES_GEOJSON[indice]);
+      if (!res.ok) throw new Error(String(res.status));
+      const json = (await res.json()) as ObjetoGeografia;
+      setGeoJson(json);
+      setIndiceFonte(indice);
+    } catch {
+      await carregarFonte(indice + 1);
+    } finally {
       setCarregando(false);
     }
-  };
+  }, []);
 
-  // Fallback para mapa simples se todas as URLs falharem
-  const MapaSimples = () => (
-    <div className="h-[400px] bg-gray-100 rounded-lg flex flex-col items-center justify-center p-8">
-      <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-        {Object.entries(dadosRegiao).map(([nomeRegiao, valor]) => {
-          const estaVisivel = !regiao || regiao === nomeRegiao;
-          const cores = {
-            'NORTE': 'bg-blue-500',
-            'NORDESTE': 'bg-orange-500',
-            'CENTRO-OESTE': 'bg-green-500',
-            'SUDESTE': 'bg-red-500',
-            'SUL': 'bg-purple-500'
-          };
-          
-          return (
-            <div
-              key={nomeRegiao}
-              className={`p-4 rounded-lg text-white text-center transition-all duration-300 ${
-                cores[nomeRegiao as keyof typeof cores] || 'bg-gray-500'
-              } ${estaVisivel ? 'opacity-100 scale-105' : 'opacity-50'}`}
-            >
-              <div className="text-sm font-semibold">{nomeRegiao}</div>
-              <div className="text-lg font-bold">{valor}</div>
+  useEffect(() => {
+    void carregarFonte(0);
+  }, [carregarFonte]);
+
+  const corParaMacro = useCallback(
+    (macro: string, intensidade: number): string => {
+      const t = valorMaxRegiao > 0 ? intensidade / valorMaxRegiao : 0;
+      const base: Record<string, string> = {
+        NORTE: '33, 150, 243',
+        NORDESTE: '255, 152, 0',
+        'CENTRO-OESTE': '76, 175, 80',
+        SUDESTE: '244, 67, 54',
+        SUL: '156, 39, 176',
+      };
+      const rgb = base[macro] ?? '160, 160, 160';
+      const alpha = 0.25 + t * 0.75;
+      return `rgba(${rgb}, ${alpha})`;
+    },
+    [valorMaxRegiao]
+  );
+
+  const MapaFallbackRegioes = () => (
+    <div className="mapa-fallback grid grid-cols-2 gap-3 w-full max-w-lg mx-auto">
+      {Object.entries(totaisPorMacro).map(([nomeMacro, valor]) => {
+        const destaque = !regiao || regiao === nomeMacro;
+        const chip =
+          {
+            NORTE: 'bg-sky-600',
+            NORDESTE: 'bg-amber-600',
+            'CENTRO-OESTE': 'bg-emerald-600',
+            SUDESTE: 'bg-rose-600',
+            SUL: 'bg-violet-600',
+          }[nomeMacro] ?? 'bg-stone-500';
+        return (
+          <div
+            key={nomeMacro}
+            className={`rounded-xl px-4 py-3 text-center text-white shadow-sm transition ${chip} ${
+              destaque ? 'opacity-100 scale-[1.02]' : 'opacity-45'
+            }`}
+          >
+            <div className="text-xs font-medium uppercase tracking-wide">
+              {nomeMacro}
             </div>
-          );
-        })}
-      </div>
+            <div className="text-lg font-bold tabular-nums">
+              {valor.toLocaleString('pt-BR')}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 
-  if (erro && urlIndex >= geoUrls.length - 1) {
+  if (carregando && !geoJson && !erroCompleto) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4 transition-all duration-300">
-        <h2 className="text-xl font-semibold text-gray-800 mb-3 text-center">
-          Mapa de Queimadas - {ano}
-        </h2>
-        <MapaSimples />
-        <div className="flex justify-center items-center mt-4">
-          <div className="text-xs text-gray-600 text-center">
-            Visualização simplificada - Dados de queimadas por região
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (carregando) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-4 transition-all duration-300">
-        <h2 className="text-xl font-semibold text-gray-800 mb-3 text-center">
-          Mapa de Queimadas - {ano}
+      <section className="painel-card p-5">
+        <h2 className="text-lg font-semibold text-[var(--cor-texto)] mb-4 text-center">
+          Mapa — {ano}
         </h2>
         <div className="h-[400px] flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-            <p>Carregando mapa...</p>
+          <div className="text-center text-[var(--cor-texto-mudo)]">
+            <div
+              className="mx-auto mb-2 h-9 w-9 animate-spin rounded-full border-2 border-[var(--cor-acento)] border-t-transparent"
+              aria-hidden
+            />
+            <p>Carregando geometrias…</p>
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
+  if (erroCompleto || !geoJson) {
+    return (
+      <section className="painel-card p-5">
+        <h2 className="text-lg font-semibold text-[var(--cor-texto)] mb-4 text-center">
+          Focos por macroregião — {ano}
+        </h2>
+        <div className="min-h-[320px] flex flex-col items-center justify-center rounded-xl bg-[var(--cor-fundo-suave)] p-6">
+          <MapaFallbackRegioes />
+          <p className="mt-4 text-center text-xs text-[var(--cor-texto-mudo)] max-w-md">
+            Mapa vetorial indisponível; totais regionais consolidados do painel.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const geographyProp: ObjetoGeografia | string =
+    geoJson.type === 'FeatureCollection' && geoJson.features?.length
+      ? geoJson
+      : FONTES_GEOJSON[indiceFonte];
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 transition-all duration-300">
-      <h2 className="text-xl font-semibold text-gray-800 mb-3 text-center">
-        Mapa de Queimadas - {ano}
+    <section className="painel-card p-5">
+      <h2 className="text-lg font-semibold text-[var(--cor-texto)] mb-4 text-center">
+        Intensidade regional no mapa — {ano}
       </h2>
-      <div className="h-[400px]">
+      <div className="h-[400px] text-[var(--cor-texto)]">
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
             scale: 700,
-            center: [-52, -15]
+            center: [-52, -15],
           }}
         >
           <ZoomableGroup>
-            <Geographies 
-              geography={geoUrl}
-              onError={tentarProximaUrl}
-            >
-              {({ geographies }) => {
-                setCarregando(false);
-                return geographies.map(geo => {
-                  const propriedades = geo.properties || {};
-                  const nomeEstado = propriedades.name || propriedades.NAME || propriedades.estado || propriedades.ESTADO;
-                  const siglaEstado = propriedades.sigla || obterEstadoPorNome(nomeEstado);
-                  
-                  const regiaoDoEstado = Object.entries(estadosPorRegiao).find(
-                    ([_, estados]) => estados.includes(siglaEstado)
-                  )?.[0];
-                  
-                  const estaVisivel = !regiao || regiao === regiaoDoEstado;
-                  const intensidade = regiaoDoEstado ? dadosRegiao[regiaoDoEstado] : 0;
-                  
+            <Geographies geography={geographyProp}>
+              {({ geographies }) =>
+                geographies.map((geo) => {
+                  const props = (geo.properties ?? {}) as Record<
+                    string,
+                    unknown
+                  >;
+                  const sigla = inferirSiglaUf(props);
+                  const macro = macroregiaoDaUf(sigla);
+                  const visivel = !regiao || (macro && regiao === macro);
+                  const intensidade = macro ? totaisPorMacro[macro] ?? 0 : 0;
+                  const fill = visivel
+                    ? corParaMacro(macro ?? '', intensidade)
+                    : 'var(--cor-mapa-inativo)';
+
                   return (
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
-                      fill={estaVisivel ? obterCor(regiaoDoEstado || '', intensidade) : '#f0f0f0'}
-                      stroke="#FFFFFF"
-                      strokeWidth={0.5}
+                      fill={fill}
+                      stroke="var(--cor-mapa-borda)"
+                      strokeWidth={0.6}
                       style={{
                         default: { outline: 'none' },
-                        hover: { 
-                          outline: 'none', 
-                          fill: estaVisivel ? '#FFD700' : '#f0f0f0',
-                          cursor: 'pointer'
+                        hover: {
+                          outline: 'none',
+                          fill: visivel
+                            ? 'var(--cor-mapa-hover)'
+                            : 'var(--cor-mapa-inativo)',
+                          cursor: visivel ? 'pointer' : 'default',
                         },
-                        pressed: { outline: 'none' }
+                        pressed: { outline: 'none' },
                       }}
                     />
                   );
-                });
-              }}
+                })
+              }
             </Geographies>
           </ZoomableGroup>
         </ComposableMap>
       </div>
-      <div className="flex justify-center items-center mt-4">
-        <div className="text-xs text-gray-600 text-center">
-          Intensidade de cores representa o volume de queimadas por região
-        </div>
-      </div>
-    </div>
+      <p className="mt-3 text-center text-xs text-[var(--cor-texto-mudo)]">
+        Opacidade proporcional ao volume de focos na macroregião (dados do
+        painel).
+      </p>
+    </section>
   );
 };
 

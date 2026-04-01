@@ -1,4 +1,5 @@
-import { DadosBioma, DadosRegiao, DadosEstado } from '../types/types';
+import { ANOS_CRONOLOGICOS } from '../constants/cronologia';
+import type { DadosBioma, DadosEstado, DadosRegiao } from '../types/types';
 
 // Dados de queimadas por bioma
 export const dadosBioma: DadosBioma[] = [
@@ -53,8 +54,7 @@ export const dadosEstados: DadosEstado[] = [
 // Lista de regiões disponíveis
 export const regioes = ['CENTRO-OESTE', 'NORDESTE', 'NORTE', 'SUDESTE', 'SUL'];
 
-// Lista de anos disponíveis
-export const anosDisponiveis = ['2019', '2020', '2021', '2022', '2023', '2024', '2025'];
+export const anosDisponiveis = [...ANOS_CRONOLOGICOS];
 
 // Cores para os gráficos
 export const coresBiomas = [

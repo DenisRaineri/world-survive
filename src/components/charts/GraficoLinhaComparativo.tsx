@@ -1,84 +1,63 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
+import type { ChartOptions, TooltipItem } from 'chart.js';
 import { obterDadosComparativoPorAnos } from '../../utils/dataUtils';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 interface GraficoLinhaComparativoProps {
   regiao: string | null;
 }
 
-const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({ regiao }) => {
+const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
+  regiao,
+}) => {
   const { labels, datasets } = obterDadosComparativoPorAnos(regiao);
 
-  const data = {
-    labels,
-    datasets: datasets,
-  };
+  const data = { labels, datasets };
 
-  const options = {
+  const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: 'top',
       },
       title: {
         display: true,
-        text: regiao 
-          ? `Evolução de Queimadas nos Estados da Região ${regiao} (2019-2025)`
-          : 'Evolução de Queimadas por Região (2019-2025)',
-        font: {
-          size: 16,
-        },
+        text: regiao
+          ? `Série 2019–2025 · UFs em ${regiao}`
+          : `Série 2019–2025 · Macroregiões`,
+        font: { size: 15, weight: '600' },
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
-            return `${context.dataset.label}: ${context.raw.toLocaleString('pt-BR')} ocorrências`;
-          }
-        }
-      }
+          label: (ctx: TooltipItem<'line'>) => {
+            const v = ctx.parsed.y;
+            if (v == null) return '';
+            return `${ctx.dataset.label}: ${Number(v).toLocaleString('pt-BR')} focos`;
+          },
+        },
+      },
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: function(value: any) {
-            return value.toLocaleString('pt-BR');
-          }
-        }
-      }
+          callback: (value) =>
+            typeof value === 'number'
+              ? value.toLocaleString('pt-BR')
+              : value,
+        },
+      },
     },
     interaction: {
       intersect: false,
-      mode: 'index' as const,
+      mode: 'index',
     },
-    animation: {
-      duration: 500,
-    },
+    animation: { duration: 480 },
   };
 
   return (
-    <div className="h-80 bg-white rounded-lg shadow-md p-4 transition-all duration-300">
+    <div className="painel-card h-80 p-4">
       <Line data={data} options={options} />
     </div>
   );

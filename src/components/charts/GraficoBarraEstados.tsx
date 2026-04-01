@@ -1,87 +1,72 @@
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { AnoDisponivel } from '../../types/types';
+import type { ChartOptions, TooltipItem } from 'chart.js';
+import type { AnoDisponivel } from '../../types/types';
 import { obterDadosEstadosPorAno } from '../../utils/dataUtils';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 interface GraficoBarraEstadosProps {
   ano: AnoDisponivel;
   regiao: string | null;
 }
 
-const GraficoBarraEstados: React.FC<GraficoBarraEstadosProps> = ({ ano, regiao }) => {
+const GraficoBarraEstados: React.FC<GraficoBarraEstadosProps> = ({
+  ano,
+  regiao,
+}) => {
   const { labels, dados } = obterDadosEstadosPorAno(ano, regiao);
 
   const data = {
     labels,
     datasets: [
       {
-        label: `Queimadas em ${ano}`,
+        label: `Focos em ${ano}`,
         data: dados,
-        backgroundColor: 'rgba(244, 67, 54, 0.8)',
-        borderColor: 'rgba(244, 67, 54, 1)',
+        backgroundColor: 'rgba(234, 88, 12, 0.75)',
+        borderColor: 'rgba(194, 65, 12, 1)',
         borderWidth: 1,
-        hoverBackgroundColor: 'rgba(244, 67, 54, 1)',
+        hoverBackgroundColor: 'rgba(194, 65, 12, 0.95)',
       },
     ],
   };
 
-  const options = {
+  const options: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: 'top',
       },
       title: {
         display: true,
-        text: `Queimadas por Estado em ${ano}${regiao ? ` - ${regiao}` : ''}`,
-        font: {
-          size: 16,
-        },
+        text: `Por UF — ${ano}${regiao ? ` · ${regiao}` : ''}`,
+        font: { size: 15, weight: '600' },
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
-            return `${context.dataset.label}: ${context.raw.toLocaleString('pt-BR')} ocorrências`;
-          }
-        }
-      }
+          label: (ctx: TooltipItem<'bar'>) => {
+            const v = ctx.parsed.y;
+            if (v == null) return '';
+            return `${ctx.dataset.label}: ${Number(v).toLocaleString('pt-BR')} focos`;
+          },
+        },
+      },
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: function(value: any) {
-            return value.toLocaleString('pt-BR');
-          }
-        }
-      }
+          callback: (value) =>
+            typeof value === 'number'
+              ? value.toLocaleString('pt-BR')
+              : value,
+        },
+      },
     },
-    animation: {
-      duration: 500,
-    },
+    animation: { duration: 480 },
   };
 
   return (
-    <div className="h-80 bg-white rounded-lg shadow-md p-4 transition-all duration-300">
+    <div className="painel-card h-80 p-4">
       <Bar data={data} options={options} />
     </div>
   );

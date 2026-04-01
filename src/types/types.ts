@@ -1,23 +1,27 @@
-export interface DadosBioma {
+import type { AnoPainel } from '../constants/cronologia';
+
+/** @deprecated use AnoPainel */
+export type AnoDisponivel = AnoPainel;
+
+export interface SeriePorAno {
+  anos: Record<AnoPainel, number>;
+}
+
+export interface DadosBioma extends SeriePorAno {
   bioma: string;
-  anos: Record<string, number>;
 }
 
-export interface DadosRegiao {
+export interface DadosRegiao extends SeriePorAno {
   regiao: string;
-  anos: Record<string, number>;
 }
 
-export interface DadosEstado {
+export interface DadosEstado extends SeriePorAno {
   estado: string;
   sigla: string;
   regiao: string;
-  anos: Record<string, number>;
 }
 
-export type AnoDisponivel = '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025';
-
-export interface FiltrosType {
-  ano: AnoDisponivel;
+export interface CriteriosPainel {
+  ano: AnoPainel;
   regiao: string | null;
 }

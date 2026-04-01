@@ -7,15 +7,18 @@ interface MapaBrasilAlternativoProps {
   regiao: string | null;
 }
 
-const MapaBrasilAlternativo: React.FC<MapaBrasilAlternativoProps> = ({ ano, regiao }) => {
+const MapaBrasilAlternativo: React.FC<MapaBrasilAlternativoProps> = ({
+  ano,
+  regiao: macroSelecionada,
+}) => {
   const dadosRegiao = obterTotalPorRegiaoPorAno(ano);
-  
-  const regioes = [
+
+  const blocosRegiao = [
     { nome: 'NORTE', cor: 'rgba(33, 150, 243, 0.8)', posicao: 'top-4 left-8' },
     { nome: 'NORDESTE', cor: 'rgba(255, 152, 0, 0.8)', posicao: 'top-8 right-12' },
     { nome: 'CENTRO-OESTE', cor: 'rgba(76, 175, 80, 0.8)', posicao: 'top-1/2 left-1/3' },
     { nome: 'SUDESTE', cor: 'rgba(244, 67, 54, 0.8)', posicao: 'bottom-1/3 right-1/3' },
-    { nome: 'SUL', cor: 'rgba(156, 39, 176, 0.8)', posicao: 'bottom-8 right-1/4' }
+    { nome: 'SUL', cor: 'rgba(156, 39, 176, 0.8)', posicao: 'bottom-8 right-1/4' },
   ];
 
   const obterIntensidade = (nomeRegiao: string): number => {
@@ -37,25 +40,28 @@ const MapaBrasilAlternativo: React.FC<MapaBrasilAlternativoProps> = ({ ano, regi
           clipPath: 'polygon(20% 10%, 80% 15%, 85% 30%, 90% 50%, 85% 70%, 75% 85%, 60% 90%, 40% 88%, 25% 80%, 15% 65%, 10% 45%, 15% 25%)'
         }}>
           {/* Regiões */}
-          {regioes.map((regiao) => {
-            const intensidade = obterIntensidade(regiao.nome);
-            const estaVisivel = !regiao || regiao === regiao.nome;
-            const opacidade = estaVisivel ? intensidade / 100 : 0.1;
-            
+          {blocosRegiao.map((bloco) => {
+            const intensidade = obterIntensidade(bloco.nome);
+            const destaque =
+              !macroSelecionada || macroSelecionada === bloco.nome;
+            const opacidade = destaque ? intensidade / 100 : 0.1;
+
             return (
               <div
-                key={regiao.nome}
-                className={`absolute w-16 h-16 rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 cursor-pointer hover:scale-110 ${regiao.posicao}`}
+                key={bloco.nome}
+                className={`absolute w-16 h-16 rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 cursor-pointer hover:scale-110 ${bloco.posicao}`}
                 style={{
-                  backgroundColor: regiao.cor,
+                  backgroundColor: bloco.cor,
                   opacity: 0.3 + opacidade * 0.7,
-                  border: estaVisivel ? '2px solid #fff' : '1px solid #ccc'
+                  border: destaque ? '2px solid #fff' : '1px solid #ccc',
                 }}
-                title={`${regiao.nome}: ${dadosRegiao[regiao.nome] || 0} queimadas`}
+                title={`${bloco.nome}: ${dadosRegiao[bloco.nome] || 0} focos`}
               >
                 <div className="text-center">
-                  <div className="text-[8px]">{regiao.nome}</div>
-                  <div className="text-[10px] font-bold">{dadosRegiao[regiao.nome] || 0}</div>
+                  <div className="text-[8px]">{bloco.nome}</div>
+                  <div className="text-[10px] font-bold">
+                    {dadosRegiao[bloco.nome] || 0}
+                  </div>
                 </div>
               </div>
             );
@@ -69,13 +75,13 @@ const MapaBrasilAlternativo: React.FC<MapaBrasilAlternativoProps> = ({ ano, regi
           Dados de queimadas por região
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-          {regioes.map((regiao) => (
-            <div key={regiao.nome} className="flex items-center space-x-1">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: regiao.cor }}
-              ></div>
-              <span className="text-gray-700">{regiao.nome}</span>
+          {blocosRegiao.map((bloco) => (
+            <div key={bloco.nome} className="flex items-center space-x-1">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: bloco.cor }}
+              />
+              <span className="text-gray-700">{bloco.nome}</span>
             </div>
           ))}
         </div>

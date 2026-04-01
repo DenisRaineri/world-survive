@@ -1,20 +1,9 @@
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { AnoDisponivel } from '../../types/types';
+import type { ChartOptions, TooltipItem } from 'chart.js';
+import type { AnoDisponivel } from '../../types/types';
 import { obterDadosBiomasPorAno } from '../../utils/dataUtils';
 import { coresBiomas } from '../../data/dadosQueimadas';
-
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend
-);
 
 interface GraficoDiscoBiomasProps {
   ano: AnoDisponivel;
@@ -30,47 +19,47 @@ const GraficoDiscoBiomas: React.FC<GraficoDiscoBiomasProps> = ({ ano }) => {
       {
         data: dados,
         backgroundColor: coresBiomas,
-        borderColor: coresBiomas.map(cor => cor.replace(/[0-9.]+\)$/, '1)')),
+        borderColor: coresBiomas.map((cor) =>
+          cor.replace(/[0-9.]+\)$/, '1)')
+        ),
         borderWidth: 1,
         hoverOffset: 10,
       },
     ],
   };
 
-  const options = {
+  const options: ChartOptions<'doughnut'> = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '50%',
+    cutout: '52%',
     plugins: {
       legend: {
-        position: 'right' as const,
+        position: 'right',
       },
       title: {
         display: true,
-        text: `Distribuição de Queimadas por Bioma em ${ano}`,
-        font: {
-          size: 16,
-        },
+        text: `Por bioma — ${ano}`,
+        font: { size: 15, weight: '600' },
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
-            const value = context.raw;
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${value.toLocaleString('pt-BR')} (${percentage}%)`;
-          }
-        }
-      }
+          label: (ctx: TooltipItem<'doughnut'>) => {
+            const value = ctx.raw as number;
+            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+            return `${ctx.label}: ${value.toLocaleString('pt-BR')} (${pct}%)`;
+          },
+        },
+      },
     },
     animation: {
       animateRotate: true,
       animateScale: true,
-      duration: 500,
+      duration: 480,
     },
   };
 
   return (
-    <div className="h-80 bg-white rounded-lg shadow-md p-4 transition-all duration-300">
+    <div className="painel-card h-80 p-4">
       <Doughnut data={data} options={options} />
     </div>
   );

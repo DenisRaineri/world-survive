@@ -1,61 +1,81 @@
 import React from 'react';
-import { AnoDisponivel, FiltrosType } from '../types/types';
+import { RotateCcw } from 'lucide-react';
+import type { AnoDisponivel, CriteriosPainel } from '../types/types';
 import { anosDisponiveis, regioes } from '../data/dadosQueimadas';
 
 interface FiltrosProps {
-  filtros: FiltrosType;
-  setFiltros: React.Dispatch<React.SetStateAction<FiltrosType>>;
+  criterios: CriteriosPainel;
+  onCriteriosChange: React.Dispatch<React.SetStateAction<CriteriosPainel>>;
+  onRedefinir: () => void;
 }
 
-const Filtros: React.FC<FiltrosProps> = ({ filtros, setFiltros }) => {
-  const handleChangeAno = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFiltros(prev => ({
-      ...prev,
-      ano: e.target.value as AnoDisponivel
-    }));
-  };
-
-  const handleChangeRegiao = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const valor = e.target.value;
-    setFiltros(prev => ({
-      ...prev,
-      regiao: valor === 'todas' ? null : valor
-    }));
-  };
-
+const Filtros: React.FC<FiltrosProps> = ({
+  criterios,
+  onCriteriosChange,
+  onRedefinir,
+}) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6 transition-all duration-300">
-      <h2 className="text-xl font-semibold text-gray-800 mb-3">Filtros</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <label htmlFor="filtroAno" className="text-sm font-medium text-gray-700 mb-1">
-            Ano
+    <div className="painel-card mb-8 p-5">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-lg font-semibold text-[var(--cor-texto)]">
+          Critérios da visão
+        </h2>
+        <button
+          type="button"
+          onClick={onRedefinir}
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--cor-borda)] bg-[var(--cor-fundo-suave)] px-3 py-1.5 text-sm font-medium text-[var(--cor-texto)] transition hover:bg-white/80"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden />
+          Redefinir
+        </button>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="filtro-ano"
+            className="text-sm font-medium text-[var(--cor-texto-mudo)]"
+          >
+            Ano de referência
           </label>
           <select
-            id="filtroAno"
-            className="form-select rounded-md border-gray-300 shadow-sm p-2 border focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
-            value={filtros.ano}
-            onChange={handleChangeAno}
+            id="filtro-ano"
+            className="rounded-lg border border-[var(--cor-borda)] bg-white px-3 py-2 text-[var(--cor-texto)] shadow-sm focus:border-[var(--cor-acento)] focus:outline-none focus:ring-2 focus:ring-[var(--cor-acento)]/25"
+            value={criterios.ano}
+            onChange={(e) =>
+              onCriteriosChange((prev) => ({
+                ...prev,
+                ano: e.target.value as AnoDisponivel,
+              }))
+            }
           >
-            {anosDisponiveis.map(ano => (
+            {anosDisponiveis.map((ano) => (
               <option key={ano} value={ano}>
                 {ano}
               </option>
             ))}
           </select>
         </div>
-        <div className="flex flex-col">
-          <label htmlFor="filtroRegiao" className="text-sm font-medium text-gray-700 mb-1">
-            Região
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="filtro-regiao"
+            className="text-sm font-medium text-[var(--cor-texto-mudo)]"
+          >
+            Macroregião
           </label>
           <select
-            id="filtroRegiao"
-            className="form-select rounded-md border-gray-300 shadow-sm p-2 border focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
-            value={filtros.regiao || 'todas'}
-            onChange={handleChangeRegiao}
+            id="filtro-regiao"
+            className="rounded-lg border border-[var(--cor-borda)] bg-white px-3 py-2 text-[var(--cor-texto)] shadow-sm focus:border-[var(--cor-acento)] focus:outline-none focus:ring-2 focus:ring-[var(--cor-acento)]/25"
+            value={criterios.regiao ?? 'todas'}
+            onChange={(e) => {
+              const v = e.target.value;
+              onCriteriosChange((prev) => ({
+                ...prev,
+                regiao: v === 'todas' ? null : v,
+              }));
+            }}
           >
-            <option value="todas">Todas as Regiões</option>
-            {regioes.map(regiao => (
+            <option value="todas">Brasil (todas)</option>
+            {regioes.map((regiao) => (
               <option key={regiao} value={regiao}>
                 {regiao}
               </option>

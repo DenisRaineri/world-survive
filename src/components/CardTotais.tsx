@@ -1,7 +1,12 @@
 import React from 'react';
-import { Flame, Info } from 'lucide-react';
-import { AnoDisponivel } from '../types/types';
-import { dadosRegiao } from '../data/dadosQueimadas';
+import { Flame, MapPinned } from 'lucide-react';
+import type { AnoDisponivel } from '../types/types';
+import {
+  participacaoRegionalNoNacional,
+  totalNacionalNoAno,
+  totalRegionalNoAno,
+  variacaoAnualNacional,
+} from '../utils/estatisticasAgregadas';
 
 interface CardTotaisProps {
   ano: AnoDisponivel;
@@ -9,65 +14,58 @@ interface CardTotaisProps {
 }
 
 const CardTotais: React.FC<CardTotaisProps> = ({ ano, regiao }) => {
-  // Calcula o total de queimadas para o ano selecionado
-  const totalAnual = dadosRegiao.reduce((acc, item) => acc + item.anos[ano], 0);
-  
-  // Calcula o total da região selecionada (se houver)
-  const totalRegiao = regiao 
-    ? dadosRegiao.find(item => item.regiao === regiao)?.anos[ano] || 0
-    : null;
-  
-  // Calcula a variação percentual em relação ao ano anterior (exceto para 2019)
-  const calcularVariacao = () => {
-    if (ano === '2019') return null;
-    
-    const anoAnterior = String(Number(ano) - 1) as AnoDisponivel;
-    const totalAnoAnterior = dadosRegiao.reduce((acc, item) => acc + item.anos[anoAnterior], 0);
-    
-    const variacao = ((totalAnual - totalAnoAnterior) / totalAnoAnterior) * 100;
-    return variacao;
-  };
-  
-  const variacao = calcularVariacao();
+  const totalAnual = totalNacionalNoAno(ano);
+  const variacao = variacaoAnualNacional(ano);
+  const totalRegiao = regiao ? totalRegionalNoAno(regiao, ano) : null;
+  const participacao =
+    regiao != null
+      ? participacaoRegionalNoNacional(regiao, ano)
+      : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div className="bg-white rounded-lg shadow-md p-4 flex flex-col transition-all duration-300">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Total de Queimadas em {ano}
+    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <article className="painel-card p-5">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-[var(--cor-texto)]">
+            Total nacional — {ano}
           </h2>
-          <Flame size={24} className="text-red-500" />
+          <Flame className="h-6 w-6 text-orange-500" aria-hidden />
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="text-3xl font-bold text-orange-600">
-            {totalAnual.toLocaleString('pt-BR')}
-          </div>
-          {variacao !== null && (
-            <div className={`text-sm flex items-center ${variacao > 0 ? 'text-red-500' : 'text-green-500'}`}>
-              {variacao > 0 ? '▲' : '▼'} {Math.abs(variacao).toFixed(1)}% em relação a {Number(ano) - 1}
-            </div>
-          )}
-        </div>
-      </div>
-      
+        <p className="text-3xl font-bold tabular-nums text-[var(--cor-acento-escuro)]">
+          {totalAnual.toLocaleString('pt-BR')}
+        </p>
+        <p className="mt-1 text-xs text-[var(--cor-texto-mudo)]">
+          Soma das macroregiões (conjunto estático do painel)
+        </p>
+        {variacao != null && (
+          <p
+            className={`mt-2 text-sm font-medium ${
+              variacao > 0 ? 'text-red-600' : 'text-emerald-700'
+            }`}
+          >
+            {variacao > 0 ? '▲' : '▼'}{' '}
+            {Math.abs(variacao).toFixed(1)}% vs. {Number(ano) - 1}
+          </p>
+        )}
+      </article>
+
       {regiao && (
-        <div className="bg-white rounded-lg shadow-md p-4 flex flex-col transition-all duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Queimadas na Região {regiao}
+        <article className="painel-card p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[var(--cor-texto)]">
+              {regiao}
             </h2>
-            <Info size={24} className="text-blue-500" />
+            <MapPinned className="h-6 w-6 text-sky-600" aria-hidden />
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="text-3xl font-bold text-blue-600">
-              {totalRegiao?.toLocaleString('pt-BR')}
-            </div>
-            <div className="text-sm text-gray-600">
-              {totalRegiao && totalAnual ? ((totalRegiao / totalAnual) * 100).toFixed(1) : 0}% do total nacional
-            </div>
-          </div>
-        </div>
+          <p className="text-3xl font-bold tabular-nums text-sky-700">
+            {totalRegiao?.toLocaleString('pt-BR')}
+          </p>
+          {participacao != null && (
+            <p className="mt-2 text-sm text-[var(--cor-texto-mudo)]">
+              {participacao.toFixed(1)}% do total nacional em {ano}
+            </p>
+          )}
+        </article>
       )}
     </div>
   );
